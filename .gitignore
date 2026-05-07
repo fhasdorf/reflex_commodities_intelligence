@@ -1,0 +1,35 @@
+.states
+.web
+*.db
+assets/external/
+# IDEs und Editoren
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.venv/
+__pycache__/
+.web/
+data/raw/*.csv
+.env
+# Betriebssysteme
+.DS_Store
+Thumbs.db
+
+# Abhängigkeiten und Caches
+node_modules/
+/vendor/
+__pycache__/
+*.py[cod]
+
+# Logs und temporäre Dateien
+*.log
+*.tmp
+.lock
+
+# Umgebungsvariablen (Sicherheit!)
+.env
+.env.local

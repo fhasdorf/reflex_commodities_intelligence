@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+            background-color: #12100E;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #12100E;
+            color: #E8E0D0;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            border-bottom: 2px solid #C8A850;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #C8A850;
+            font-size: 22pt;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            color: #C8A850;
+            font-size: 16pt;
+            margin-top: 25px;
+            border-left: 3px solid #C8A850;
+            padding-left: 10px;
+        }
+        h3 {
+            color: #E8E0D0;
+            font-size: 13pt;
+            margin-bottom: 5px;
+        }
+        p {
+            font-size: 11pt;
+            color: #B0A9A0;
+            margin-bottom: 15px;
+        }
+        .tech-stack {
+            background-color: #1A1814;
+            border: 1px solid #2A2520;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step-box {
+            margin-bottom: 20px;
+            padding-left: 10px;
+        }
+        .code-inline {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #2A2520;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #C8A850;
+            font-weight: bold;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+        }
+        li::before {
+            content: "→";
+            color: #C8A850;
+            position: absolute;
+            left: 0;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 9pt;
+            color: #4A4540;
+            text-align: center;
+            border-top: 1px solid #1A1814;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Trend-Engine Dokumentation</h1>
+        <p>Strategisches Framework für Commodity Intelligence</p>
+    </div>
+
+    <h2>1. Technologische Basis</h2>
+    <div class="tech-stack">
+        <p>Um aus unstrukturierten Daten (News) einen Intelligence-Vorteil zu generieren, nutzen wir eine dreistufige Python-Architektur:</p>
+        <ul>
+            <li><strong>Datenmanagement:</strong> <span class="code-inline">Pandas</span> für Aggregation & Cleaning.</li>
+            <li><strong>Mustererkennung:</strong> <span class="code-inline">Scikit-learn / NLTK / BERTopic</span> für Natural Language Processing.</li>
+            <li><strong>Prognostik:</strong> <span class="code-inline">Facebook Prophet</span> für Zeitreihen-Vorhersagen.</li>
+        </ul>
+    </div>
+
+    <h2>2. Der Analyse-Prozess</h2>
+    
+    <div class="step-box">
+        <h3>Schritt 1: Aggregation (Pandas)</h3>
+        <p>Die News-Files aus <span class="code-inline">data/raw</span> werden zeitlich sortiert und bereinigt. Wir erstellen eine Matrix, die zeigt, welcher Rohstoff (z.B. Graphit) zu welchem Zeitpunkt wie oft erwähnt wurde.</p>
+    </div>
+
+    <div class="step-box">
+        <h3>Schritt 2: Inhalts-Analyse (NLP/ML)</h3>
+        <p>Hier findet die eigentliche "Intelligenz" statt. Wir untersuchen nicht nur Häufigkeiten, sondern Themen-Cluster. Ein ML-Modell erkennt automatisch, ob News über "Preise", "Streiks" oder "neue Vorkommen" handeln.</p>
+    </div>
+
+    <div class="step-box">
+        <h3>Schritt 3: Trend-Forecasting (Prophet)</h3>
+        <p>Die extrahierten Muster werden an Prophet übergeben. Das Modell berechnet Trends unter Berücksichtigung von Saisonalitäten (z.B. Wirtschaftszyklen) und gibt uns eine Wahrscheinlichkeit für die zukünftige Entwicklung eines Themas.</p>
+    </div>
+
+    <h2>3. Dashboard-Integration</h2>
+    <p>In der Reflex-App wird dieses Modell über die <strong>Trend-Algorithmus Kachel</strong> gesteuert:</p>
+    <ul>
+        <li>Hinter dem <strong>Hilfe-Symbol (?)</strong> erscheint diese Dokumentation.</li>
+        <li>Die Kachel visualisiert die Konfidenzintervalle der Trends.</li>
+        <li>Ermöglicht "What-if" Analysen für Rohstoff-Szenarien.</li>
+    </ul>
+
+    <div class="footer">
+        © 2026 EMIAG Intelligence Unit · Reflex-App ExploreIQ Integration
+    </div>
+</body>
+</html>
