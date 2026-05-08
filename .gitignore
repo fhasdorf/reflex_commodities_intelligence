@@ -15,6 +15,7 @@ __pycache__/
 .web/
 data/raw/*.csv
 .env
+docs/
 # Betriebssysteme
 .DS_Store
 Thumbs.db
