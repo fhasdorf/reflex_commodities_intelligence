@@ -2,7 +2,7 @@
 # @Author: Frank Hasdorf
 # @Date:   07-05-2026 10:47:06
 # @Last Modified by:   Frank Hasdorf
-# @Last Modified time: 07-05-2026 15:44:03
+# @Last Modified time: 07-05-2026 17:27:01
 
 
 def main():
@@ -19,10 +19,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 class NewsFetcher:
-    def __init__(self):
-        # Geht vom aktuellen Ordner hoch zum Hauptordner, um die Docs/.env zu finden
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    def __init__(self, query=""):  # Jetzt mit Parameter
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(current_dir) 
         env_path = os.path.join(root_dir, 'Docs', '.env')
+        
         load_dotenv(dotenv_path=env_path)
         
         self.keys = {
@@ -31,8 +32,11 @@ class NewsFetcher:
             "marketaux": os.getenv("MARKETAUX_KEY")
         }
         
-        # Etwas breitere Query für die Präsentation, damit sicher Daten kommen
-        self.query = "Mining OR Norway OR Investment"
+        self.query = query  # Das Keyword wird hier gespeichert
+        
+        # Kleiner Sicherheits-Check fürs Terminal
+        if not self.keys["newsapi_org"]:
+            print("ACHTUNG: API Keys wurden nicht gefunden! Pfad:", env_path)
 
     def fetch_newsapi_org(self):
         url = "https://newsapi.org/v2/everything"
@@ -62,11 +66,26 @@ class NewsFetcher:
         org_data = self.fetch_newsapi_org()
         aux_data = self.fetch_marketaux()
         
-        df_org = pd.DataFrame(org_data)[['publishedAt', 'title', 'description', 'url']] if org_data else pd.DataFrame()
-        df_aux = pd.DataFrame(aux_data)[['published_at', 'title', 'description', 'url']] if aux_data else pd.DataFrame()
+        # Sicherer Pandas-Import (verhindert Abstürze bei leeren APIs)
+        cols = ['publishedAt', 'title', 'description', 'url']
         
-        if not df_aux.empty and 'published_at' in df_aux.columns:
-            df_aux = df_aux.rename(columns={'published_at': 'publishedAt'})
+        if org_data:
+            df_org = pd.DataFrame(org_data)
+            for c in cols:
+                if c not in df_org.columns: df_org[c] = ""
+            df_org = df_org[cols]
+        else:
+            df_org = pd.DataFrame(columns=cols)
+            
+        if aux_data:
+            df_aux = pd.DataFrame(aux_data)
+            if 'published_at' in df_aux.columns:
+                df_aux = df_aux.rename(columns={'published_at': 'publishedAt'})
+            for c in cols:
+                if c not in df_aux.columns: df_aux[c] = ""
+            df_aux = df_aux[cols]
+        else:
+            df_aux = pd.DataFrame(columns=cols)
 
         combined_df = pd.concat([df_org, df_aux], ignore_index=True)
         if combined_df.empty:
@@ -74,10 +93,11 @@ class NewsFetcher:
 
         combined_df = combined_df.drop_duplicates(subset=['title'])
         
-        # Speichert die CSV im data/raw Ordner des Projekts
+        # --- DER FIX: Speichert die CSV im versteckten ".data" Ordner ---
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        os.makedirs(os.path.join("data", "raw"), exist_ok=True)
-        path = os.path.join("data", "raw", f"market_intel_{timestamp}.csv")
+        save_dir = os.path.join(".data", "raw")
+        os.makedirs(save_dir, exist_ok=True)
+        path = os.path.join(save_dir, f"market_intel_{timestamp}.csv")
         
         combined_df.to_csv(path, index=False, encoding='utf-8')
         

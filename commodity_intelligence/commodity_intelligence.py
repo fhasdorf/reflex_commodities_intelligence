@@ -2,8 +2,16 @@
 # @Author: Frank Hasdorf
 # @Date:   07-05-2026 14:41:21
 # @Last Modified by:   Frank Hasdorf
-# @Last Modified time: 07-05-2026 16:40:08
+# @Last Modified time: 07-05-2026 17:27:57
 
+
+def main():
+    print("Hello, World!")
+
+
+if __name__ == "__main__":
+    main()
+# -*- coding: utf-8 -*-
 import reflex as rx
 import asyncio
 import os
@@ -26,7 +34,6 @@ BRAND_COLORS = {
     "text_dim": "#94A3B8",  # Grau-Blau
 }
 
-# Zentrale Definition für das Kachel-Verhalten
 CARD_STYLE = {
     "background": BRAND_COLORS["card"],
     "border": f"1px solid {BRAND_COLORS['bg']}",
@@ -36,34 +43,45 @@ CARD_STYLE = {
     "transition": "all 0.2s ease-in-out",
     "_hover": {
         "border_color": BRAND_COLORS["accent"],
-        "background": "#1E293B", # Etwas helleres Blau beim Hovern
-        "transform": "translateY(-4px)", # Kleiner "Lift"-Effekt
+        "background": "#1E293B", 
+        "transform": "translateY(-4px)", 
     }
 }
 
-# UMBENANNT: Von 'State' zu 'MarketState', um Namenskonflikte zu lösen
 class MarketState(rx.State):
+    search_query: str = ""  # Startet mit leerem Feld
     processing: bool = False
     progress_value: int = 0
     status_text: str = "Bereit für Marktanalyse"
     last_report: str = ""
     news_data: list[dict] = []
-
+    # --- NEU: Expliziter Setter, damit Reflex nicht stolpert ---
+    def set_search_query(self, value: str):
+        self.search_query = value
     async def run_market_intelligence(self):
+        # Sicherheits-Check: Kein Start ohne Keyword
+        if not self.search_query.strip():
+            self.status_text = "Bitte gib zuerst ein Keyword ein!"
+            yield
+            await asyncio.sleep(2)
+            self.status_text = "Bereit für Marktanalyse"
+            return
+
         self.processing = True
         self.progress_value = 10
-        self.status_text = "Verbindung zu APIs..."
+        self.status_text = f"Suche nach '{self.search_query}'..."
         yield
         
         try:
-            fetcher = NewsFetcher()
+            # Übergabe an den Fetcher
+            fetcher = NewsFetcher(query=self.search_query) 
             result_msg = fetcher.aggregate_and_save()
             
             self.status_text = "Lade neueste Signale..."
             self.progress_value = 70
             yield
 
-            files = glob.glob(os.path.join("data", "raw", "*.csv"))
+            files = glob.glob(os.path.join(".data", "raw", "*.csv"))
             if files:
                 latest_file = max(files, key=os.path.getctime)
                 df = pd.read_csv(latest_file)
@@ -90,54 +108,100 @@ def news_row(article: dict) -> rx.Component:
     return rx.box(
         rx.hstack(
             rx.vstack(
-                rx.text(article["publishedAt"], size="1", color=GOLD),
-                rx.heading(article["title"], size="3", color=TEXT_LIGHT),
-                rx.text(article["description"], size="2", color=TEXT_MUTE),
+                rx.text(article["publishedAt"], size="1", color=BRAND_COLORS["accent"]),
+                rx.heading(article["title"], size="3", color=BRAND_COLORS["text_main"]),
+                rx.text(article["description"], size="2", color=BRAND_COLORS["text_dim"]),
                 align="start", spacing="1",
             ),
             rx.spacer(),
-            rx.link(rx.icon(tag="external_link", size=20, color=GOLD), href=article["url"], is_external=True),
-            width="100%", padding="20px", border_bottom="1px solid #1E1C18",
-            _hover={"background": "#161412"},
+            rx.link(rx.icon(tag="external_link", size=20, color=BRAND_COLORS["accent"]), href=article["url"], is_external=True),
+            width="100%", padding="20px", border_bottom=f"1px solid {BRAND_COLORS['bg']}",
+            _hover={"background": "#1E293B"},
         ),
         width="100%",
     )
 
-def app_card(icon: str, title: str, desc: str, status: str, is_news: bool = False) -> rx.Component:
+def app_card(icon: str, title: str, desc: str, status: str, help_url: str = None, is_news: bool = False) -> rx.Component:
+    help_icon = rx.cond(
+        help_url,
+        rx.link(rx.icon(tag="circle_help", size=18, color=BRAND_COLORS["text_dim"], _hover={"color": BRAND_COLORS["accent"]}, margin_left="8px"), href=help_url, is_external=True),
+        rx.fragment(),
+    )
+
     return rx.box(
         rx.vstack(
             rx.hstack(
                 rx.center(rx.text(icon, font_size="20px"), width="40px", height="40px", background="#1E293B", border_radius="6px"),
                 rx.vstack(
-                    rx.heading(title, size="3", color=BRAND_COLORS["text_main"]),
+                    rx.hstack(rx.heading(title, size="3", color=BRAND_COLORS["text_main"]), help_icon, align="center"),
                     rx.text(status, size="1", color=BRAND_COLORS["accent"], letter_spacing="0.05em"),
                     spacing="0", align="start",
                 ),
-                width="100%",
+                spacing="3", align="center", width="100%",
             ),
             rx.text(desc, size="2", color=BRAND_COLORS["text_dim"], margin_top="10px"),
-            # ... Button Logik bleibt gleich ...
+            rx.cond(
+                is_news & MarketState.processing,
+                rx.vstack(rx.progress(value=MarketState.progress_value, width="100%", color_scheme="blue"), rx.text(MarketState.status_text, size="1", color=BRAND_COLORS["accent"], text_align="center"), width="100%", margin_top="15px"),
+                rx.vstack(
+                    rx.button(
+                        "Intelligence Update" if is_news else "Tool öffnen",
+                        on_click=MarketState.run_market_intelligence if is_news else None,
+                        variant="ghost", width="100%", margin_top="15px",
+                        border=f"1px solid {BRAND_COLORS['bg']}", 
+                        color=BRAND_COLORS["accent"], # <-- BLAUE SCHRIFT!
+                        font_family="'Inter', sans-serif", weight="medium", letter_spacing="0.05em",
+                        _hover={"background": BRAND_COLORS["bg"], "color": BRAND_COLORS["text_main"]},
+                    ),
+                    rx.cond(is_news & (MarketState.last_report != ""), rx.text(MarketState.last_report, size="1", color=BRAND_COLORS["text_dim"]), rx.fragment()),
+                    width="100%"
+                ),
+            ),
+            align="start", spacing="1",
         ),
-        # HIER wird der globale Style angewendet:
-        style=CARD_STYLE, 
+        style=CARD_STYLE,
     )
 
 def index() -> rx.Component:
     return rx.box(
         rx.vstack(
-            # --- HEADER ---
             rx.hstack(
                 rx.vstack(
-                    rx.heading("Commodity Intelligence", size="8", color=TEXT_LIGHT),
-                    rx.text("Capital Market Advisory & Strategic CRM Monitoring", color=TEXT_MUTE),
+                    rx.heading("Commodity Intelligence", size="8", color=BRAND_COLORS["text_main"]),
+                    rx.text("Capital Market Advisory & Strategic CRM Monitoring", color=BRAND_COLORS["text_dim"]),
                     align="start",
                 ),
                 rx.spacer(),
-                rx.badge("V 0.1 ALPHA", variant="outline", border_radius="full", padding_x="12px"),
+                rx.badge("V 0.1 ALPHA", variant="outline", border_radius="full", padding_x="12px", color_scheme="blue"),
                 width="100%", padding_bottom="40px",
             ),
+            
+            # --- DAS NEUE SUCHFELD ---
+            rx.hstack(
+                rx.input(
+                    placeholder="Keywords (z.B. Kupfer, Gold, Lithium)...",
+                    on_change=MarketState.set_search_query, 
+                    value=MarketState.search_query,
+                    width="400px",
+                    background=BRAND_COLORS["card"],
+                    border=f"1px solid {BRAND_COLORS['bg']}",
+                    color=BRAND_COLORS["text_main"],
+                    _focus={"border_color": BRAND_COLORS["accent"]},
+                ),
+                rx.button(
+                    rx.icon(tag="search", size=18),
+                    "Analyse starten",
+                    on_click=MarketState.run_market_intelligence,
+                    background=BRAND_COLORS["accent"],
+                    color=BRAND_COLORS["bg"],
+                    _hover={"opacity": 0.8, "transform": "scale(1.02)"},
+                ),
+                spacing="3",
+                margin_bottom="30px",
+                align="center",
+                width="100%"
+            ),
 
-            # --- KACHELN (Alle 4 wieder da!) ---
             rx.grid(
                 app_card("📰", "News-Intelligence", "Echtzeit-Monitoring von Kapitalmarkt-Events und Rohstoff-Deals.", "AKTIV", is_news=True),
                 app_card("🏢", "Registry-Audit", "Analyse von Besitzstrukturen und wirtschaftlich Berechtigten.", "IN PLANUNG"),
@@ -145,44 +209,34 @@ def index() -> rx.Component:
                 app_card("📈", "Trend-Algorithmus", "NLP-basierte Mustererkennung in Markt-Datenströmen.", "KONZEPT", help_url="/faq/trend_algorithmus_konzept.html"),
                 columns="2", spacing="5", width="100%",
             ),
-
-            # --- ERGEBNIS LISTE ---
             rx.cond(
                 MarketState.news_data,
                 rx.vstack(
                     rx.hstack(
-                        rx.heading("Aktuelle Marktsignale", size="6", color=TEXT_LIGHT),
-                        rx.badge(f"{MarketState.news_data.length()} Signale", color_scheme="gold", variant="soft"),
+                        rx.heading("Aktuelle Marktsignale", size="6", color=BRAND_COLORS["text_main"]),
+                        rx.badge(f"{MarketState.news_data.length()} Signale", color_scheme="blue", variant="soft"),
                         margin_top="60px", margin_bottom="20px", width="100%", align="end",
                     ),
                     rx.box(
                         rx.vstack(rx.foreach(MarketState.news_data, news_row), spacing="0"),
-                        width="100%", background=CARD_BG, border="1px solid #2A2520", border_radius="12px", overflow="hidden",
+                        width="100%", background=BRAND_COLORS["card"], border=f"1px solid {BRAND_COLORS['bg']}", border_radius="12px", overflow="hidden",
                     ),
                     width="100%",
                 ),
                 rx.fragment(),
             ),
-
-            # --- FOOTER ---
             rx.hstack(
-                rx.text("Reflex Intelligence Engine · Capital Market Unit", size="1", color=TEXT_MUTE),
+                rx.text("Reflex Intelligence Engine · Capital Market Unit", size="1", color=BRAND_COLORS["text_dim"]),
                 rx.spacer(),
-                rx.text("© 2026 EMIAG Intelligence", size="1", color=TEXT_MUTE),
-                width="100%", margin_top="60px", padding_top="20px",
-                border_top=f"1px solid #1E1C18",
+                rx.text("© 2026 EMIAG Intelligence", size="1", color=BRAND_COLORS["text_dim"]),
+                width="100%", margin_top="60px", padding_top="20px", border_top=f"1px solid {BRAND_COLORS['bg']}",
             ),
             max_width="1100px", margin="0 auto", padding="40px 24px",
         ),
-        background=BG_DARK, min_height="100vh",
+        background=BRAND_COLORS["bg"], min_height="100vh", font_family="'Inter', sans-serif",
     )
 
 app = rx.App(
-    theme=rx.theme(
-        appearance="dark", 
-        accent_color="blue", # Dein Banking-Blau für Radix-Elemente
-        font_family="Inter, sans-serif", # Globaler Font
-    ),
     stylesheets=[
         "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
     ],
