@@ -2,15 +2,9 @@
 # @Author: Frank Hasdorf
 # @Date:   07-05-2026 10:47:06
 # @Last Modified by:   Frank Hasdorf
-# @Last Modified time: 07-05-2026 17:27:01
+# @Last Modified time: 08-05-2026 21:51:17
 
 
-def main():
-    print("Hello, World!")
-
-
-if __name__ == "__main__":
-    main()
 # -*- coding: utf-8 -*-
 import os
 import requests
@@ -29,7 +23,8 @@ class NewsFetcher:
         self.keys = {
             "newsapi_org": os.getenv("NEWSAPI_ORG_KEY"),
             "newsapi_ai": os.getenv("NEWSAPI_AI_KEY"),
-            "marketaux": os.getenv("MARKETAUX_KEY")
+            "marketaux": os.getenv("MARKETAUX_KEY"),
+            "alphavantage":os.getenv("ALPHAVANTAGE_KEY")
         }
         
         self.query = query  # Das Keyword wird hier gespeichert
